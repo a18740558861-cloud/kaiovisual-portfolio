@@ -1,3 +1,29 @@
+/* 图片走 jsDelivr CDN 加速（国内节点更快），加载失败自动回退到 GitHub Pages */
+const CDN_BASE = 'https://cdn.jsdelivr.net/gh/a18740558861-cloud/kaiovisual-portfolio@main/';
+function cdnImg(rel, cls, extra) {
+  return `<img class="${cls}" src="${CDN_BASE + rel}" data-fallback="${rel}" data-cdn="1" alt="" decoding="async" ${extra || ''}>`;
+}
+document.addEventListener('error', (e) => {
+  const t = e.target;
+  if (t && t.tagName === 'IMG' && t.dataset.cdn === '1') {
+    t.dataset.cdn = '0';
+    t.src = t.dataset.fallback;
+  }
+}, true);
+
+/* 若 CDN 在 2.6s 内仍未加载完成（只是慢、未报错），自动回退 GitHub Pages，避免页面一直转圈 */
+function watchCdnImages(root) {
+  (root || document).querySelectorAll('img[data-cdn="1"]:not([data-watched])').forEach(img => {
+    img.dataset.watched = '1';
+    setTimeout(() => {
+      if (img.dataset.cdn === '1' && (!img.complete || img.naturalWidth === 0)) {
+        img.dataset.cdn = '0';
+        img.src = img.dataset.fallback;
+      }
+    }, 2600);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   applyEnglish();
   initNavbar();
@@ -6,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSection('space');
   initSection('plane');
   initReveal();
+  watchCdnImages(document);
 });
 
 /* ---------- English subtitles ---------- */
@@ -59,7 +86,9 @@ function applyEnglish() {
 /* ---------- Navbar ---------- */
 function initNavbar() {
   const logoImg = document.getElementById('nav-logo-img');
-  logoImg.src = SITE.logo;
+  logoImg.src = CDN_BASE + SITE.logo;
+  logoImg.dataset.fallback = SITE.logo;
+  logoImg.dataset.cdn = '1';
   logoImg.alt = SITE.brandName;
 
   const linksEl = document.getElementById('nav-links');
@@ -117,16 +146,37 @@ function initBanner() {
     const slide = document.createElement('div');
     slide.className = `slide ${i === 0 ? 'is-active' : ''}`;
     slide.dataset.index = i;
-    slide.innerHTML = `
-      <div class="slide-base" style="background-image:url('${b.src}')"></div>
-      <div class="slide-mask" style="background-image:url('${b.mask}')"></div>
-    `;
+    slide.dataset.src = b.src;
+    slide.dataset.mask = b.mask;
+    slide.innerHTML = `<div class="slide-base"></div><div class="slide-mask"></div>`;
     track.appendChild(slide);
   });
 
   let current = 0;
   const interval = 8000;
   const slides = track.querySelectorAll('.slide');
+
+  // 懒加载 + CDN：仅在使用时才插入 <img>（可走 CDN 且失败自动回退）
+  const loadSlide = (i) => {
+    const s = slides[i];
+    if (!s || s.dataset.loaded) return;
+    const base = document.createElement('img');
+    base.className = 'slide-img';
+    base.src = CDN_BASE + s.dataset.src;
+    base.dataset.fallback = s.dataset.src;
+    base.dataset.cdn = '1';
+    s.querySelector('.slide-base').appendChild(base);
+    const mask = document.createElement('img');
+    mask.className = 'slide-mask-img';
+    mask.src = CDN_BASE + s.dataset.mask;
+    mask.dataset.fallback = s.dataset.mask;
+    mask.dataset.cdn = '1';
+    s.querySelector('.slide-mask').appendChild(mask);
+    watchCdnImages(s);
+    s.dataset.loaded = '1';
+  };
+  loadSlide(0);
+  loadSlide(1);
 
   const updateText = (i) => {
     enEl.textContent = SITE.banners[i].en;
@@ -141,6 +191,8 @@ function initBanner() {
     slides[current].classList.remove('is-active');
     current = (next + slides.length) % slides.length;
     slides[current].classList.add('is-active');
+    loadSlide(current);
+    loadSlide((current + 1) % slides.length);
     updateText(current);
     progressEl.style.transition = 'none';
     progressEl.style.width = '0%';
@@ -183,8 +235,9 @@ function initBanner() {
 /* ---------- Logo marquee ---------- */
 function initMarquee() {
   const track = document.getElementById('marquee-track');
-  const items = SITE.brandLogos.map(src => `<img class="marquee-item" src="${src}" alt="" loading="lazy">`).join('');
+  const items = SITE.brandLogos.map(src => cdnImg(src, 'marquee-item', 'loading="lazy"')).join('');
   track.innerHTML = items + items;
+  watchCdnImages(track);
 }
 
 /* ---------- Section tabs & grid ---------- */
@@ -205,7 +258,7 @@ function initSection(type) {
     const projects = data.modules[activeIndex].projects;
     gridEl.innerHTML = projects.map(p => `
       <article class="card reveal" data-id="${p.id}" title="${p.title}">
-        <div class="card-thumb" style="background-image:url('${p.thumb}')"></div>
+        <div class="card-thumb">${cdnImg(p.thumb, 'card-thumb-img', 'loading="lazy"')}</div>
         <div class="card-overlay"></div>
         <div class="card-info">
           <p class="card-en">${p.en || ''}</p>
@@ -214,6 +267,8 @@ function initSection(type) {
         </div>
       </article>
     `).join('');
+
+    watchCdnImages(gridEl);
 
     gridEl.querySelectorAll('.card').forEach(card => {
       card.addEventListener('click', () => {
