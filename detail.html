@@ -146,9 +146,33 @@
 
   <script src="data.js"></script>
   <script>
+    const CDN_BASE = 'https://cdn.jsdelivr.net/gh/a18740558861-cloud/kaiovisual-portfolio@main/';
+    document.addEventListener('error', (e) => {
+      const t = e.target;
+      if (t && t.tagName === 'IMG' && t.dataset.cdn === '1') {
+        t.dataset.cdn = '0';
+        t.src = t.dataset.fallback;
+      }
+    }, true);
+
+    /* 若 CDN 在 2.6s 内仍未加载完成，自动回退 GitHub Pages，避免一直转圈 */
+    function watchCdnImages(root) {
+      (root || document).querySelectorAll('img[data-cdn="1"]:not([data-watched])').forEach(img => {
+        img.dataset.watched = '1';
+        setTimeout(() => {
+          if (img.dataset.cdn === '1' && (!img.complete || img.naturalWidth === 0)) {
+            img.dataset.cdn = '0';
+            img.src = img.dataset.fallback;
+          }
+        }, 2600);
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const logoImg = document.getElementById('nav-logo-img');
-      logoImg.src = SITE.logo;
+      logoImg.src = CDN_BASE + SITE.logo;
+      logoImg.dataset.fallback = SITE.logo;
+      logoImg.dataset.cdn = '1';
       logoImg.alt = SITE.brandName;
 
       const linksEl = document.getElementById('nav-links');
@@ -175,11 +199,12 @@
       const gallery = document.getElementById('detail-gallery');
       gallery.innerHTML = found.project.gallery.map((src, i) => `
         <figure class="detail-media reveal">
-          <img src="${src}" alt="${found.project.title} 作品图 ${i + 1}" loading="lazy">
+          <img src="${CDN_BASE + src}" data-fallback="${src}" data-cdn="1" alt="${found.project.title} 作品图 ${i + 1}" loading="lazy">
         </figure>
       `).join('');
 
       observeReveals(gallery.querySelectorAll('.reveal'));
+      watchCdnImages(document);
     });
 
     function observeReveals(nodes) {
