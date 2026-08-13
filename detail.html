@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目详情 | 凯奥视觉设计</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .detail-hero {
+      padding-top: 160px;
+      padding-bottom: 64px;
+      background: var(--bg);
+    }
+
+    .detail-meta {
+      max-width: 70%;
+      margin: 0 auto;
+    }
+
+    .detail-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .detail-en {
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      margin: 0 0 10px;
+    }
+
+    .detail-title {
+      font-size: 48px;
+      font-weight: 500;
+      line-height: 1.2;
+      margin: 0 0 20px;
+    }
+
+    .detail-intro {
+      font-size: 22px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.5;
+      margin: 0 0 28px;
+    }
+
+    .detail-desc {
+      font-size: 16px;
+      line-height: 1.9;
+      color: var(--text-muted);
+      max-width: 720px;
+    }
+
+    .detail-gallery {
+      padding-bottom: 120px;
+      background: var(--bg);
+    }
+
+    .detail-media {
+      width: 70%;
+      margin: 0 auto 40px;
+    }
+
+    .detail-media img {
+      width: 100%;
+      display: block;
+      border-radius: var(--radius);
+      background: #141414;
+    }
+
+    .detail-caption {
+      width: 70%;
+      margin: 0 auto 64px;
+      font-size: 14px;
+      color: var(--text-muted);
+      border-left: 2px solid rgba(255,255,255,0.4);
+      padding-left: 16px;
+    }
+
+    .detail-back {
+      position: fixed;
+      left: 48px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 90;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+
+    .detail-back:hover {
+      background: #fff;
+      color: #000;
+      border-color: #fff;
+    }
+
+    @media (max-width: 1024px) {
+      .detail-meta, .detail-media, .detail-caption { max-width: 90%; width: 90%; }
+      .detail-title { font-size: 36px; }
+      .detail-back { left: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav id="navbar" class="navbar is-solid">
+    <div class="grid nav-inner">
+      <a class="nav-logo" href="index.html" aria-label="凯奥视觉设计">
+        <img id="nav-logo-img" src="" alt="凯奥视觉设计">
+      </a>
+      <ul class="nav-links" id="nav-links"></ul>
+    </div>
+  </nav>
+
+  <button class="detail-back" onclick="history.back()" aria-label="返回">←</button>
+
+  <header class="detail-hero" id="detail-hero">
+      <div class="detail-meta">
+        <div class="detail-label" id="detail-label"></div>
+        <p class="detail-en" id="detail-en"></p>
+        <h1 class="detail-title" id="detail-title"></h1>
+        <p class="detail-intro" id="detail-intro"></p>
+        <p class="detail-desc" id="detail-desc"></p>
+      </div>
+  </header>
+
+  <section class="detail-gallery" id="detail-gallery"></section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 凯奥视觉设计 · 保留所有权利</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoImg = document.getElementById('nav-logo-img');
+      logoImg.src = SITE.logo;
+      logoImg.alt = SITE.brandName;
+
+      const linksEl = document.getElementById('nav-links');
+      linksEl.innerHTML = SITE.nav.map(n =>
+        `<li><a href="index.html${n.href}">${n.label}</a></li>`
+      ).join('');
+
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      const found = id ? findProjectById(id) : null;
+
+      if (!found) {
+        document.getElementById('detail-title').textContent = '项目未找到';
+        document.getElementById('detail-intro').textContent = '请从首页选择项目查看详情。';
+        return;
+      }
+
+      document.getElementById('detail-label').textContent = `${found.section} / ${found.module}`;
+      document.getElementById('detail-en').textContent = found.project.en || '';
+      document.getElementById('detail-title').textContent = found.project.title;
+      document.getElementById('detail-intro').textContent = found.project.intro;
+      document.getElementById('detail-desc').textContent = found.project.desc;
+
+      const gallery = document.getElementById('detail-gallery');
+      gallery.innerHTML = found.project.gallery.map((src, i) => `
+        <figure class="detail-media reveal">
+          <img src="${src}" alt="${found.project.title} 作品图 ${i + 1}" loading="lazy">
+        </figure>
+      `).join('');
+
+      observeReveals(gallery.querySelectorAll('.reveal'));
+    });
+
+    function observeReveals(nodes) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      nodes.forEach(n => io.observe(n));
+    }
+  </script>
+</body>
+</html>
