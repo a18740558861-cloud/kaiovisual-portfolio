@@ -480,6 +480,9 @@ a { color: inherit; text-decoration: none; }
 .contact-link:hover { border-color: #fff; }
 
 .contact-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 48px;
   list-style: none;
   margin: 24px 0 0;
   padding: 0;
@@ -492,11 +495,11 @@ a { color: inherit; text-decoration: none; }
   font-size: 16px;
   line-height: 1.8;
   color: var(--text-muted);
-  margin-top: 12px;
+  white-space: nowrap;
 }
 
 .contact-label {
-  flex: 0 0 3em;
+  flex: 0 0 auto;
   color: #fff;
   font-weight: 500;
 }
@@ -509,8 +512,9 @@ a { color: inherit; text-decoration: none; }
 .contact-qr {
   margin-top: 28px;
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .contact-qr img {
