@@ -3,11 +3,77 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
     <title>Wu Kai-- 3D Creator</title>
-    <script type="module" crossorigin src="/kaiovisual-portfolio/assets/index-DNsl6COU.js"></script>
-    <link rel="stylesheet" crossorigin href="/kaiovisual-portfolio/assets/index-Bcl2BPLS.css">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+    <link rel="preload" as="script" crossorigin href="https://cdn.jsdelivr.net/gh/a18740558861-cloud/kaiovisual-portfolio@main/assets/index-DNsl6COU.js" />
+    <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/a18740558861-cloud/kaiovisual-portfolio@main/assets/index-Bcl2BPLS.css" onerror="var l=document.createElement('link');l.rel='stylesheet';l.crossOrigin='anonymous';l.href='/kaiovisual-portfolio/assets/index-Bcl2BPLS.css';document.head.appendChild(l);" />
+    <script>
+    (function () {
+      var CDN = 'https://cdn.jsdelivr.net/gh/a18740558861-cloud/kaiovisual-portfolio@main/';
+      var LOCAL = '/kaiovisual-portfolio/';
+      var JS = 'assets/index-DNsl6COU.js';
+      var booted = false;
+      var cdnScript = null;
+
+      function bootLocal() {
+        if (booted) return;
+        booted = true;
+        if (cdnScript && cdnScript.parentNode) {
+          cdnScript.src = '';
+          cdnScript.parentNode.removeChild(cdnScript);
+        }
+        var s = document.createElement('script');
+        s.type = 'module';
+        s.crossOrigin = 'anonymous';
+        s.src = LOCAL + JS;
+        document.head.appendChild(s);
+      }
+
+      cdnScript = document.createElement('script');
+      cdnScript.type = 'module';
+      cdnScript.crossOrigin = 'anonymous';
+      cdnScript.src = CDN + JS;
+      cdnScript.onload = function () { booted = true; };
+      cdnScript.onerror = function () { bootLocal(); };
+      document.head.appendChild(cdnScript);
+
+      setTimeout(function () { if (!booted) bootLocal(); }, 4500);
+
+      var IMG_TIMEOUT = 1800;
+      function swap(img) {
+        if (img.dataset.fbk) return;
+        var raw = img.getAttribute('src') || '';
+        var rel = null;
+        var i = raw.indexOf(LOCAL);
+        if (i > -1) { rel = raw.slice(i + LOCAL.length); }
+        else {
+          i = (img.src || '').indexOf(LOCAL);
+          if (i > -1) rel = img.src.slice(i + LOCAL.length);
+        }
+        if (!rel) return;
+        img.dataset.fbk = '1';
+        img.src = CDN + rel;
+      }
+      document.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t.tagName === 'IMG') swap(t);
+      }, true);
+      setInterval(function () {
+        var imgs = document.querySelectorAll('img');
+        var now = Date.now();
+        for (var k = 0; k < imgs.length; k++) {
+          var im = imgs[k];
+          if (im.dataset.fbk || (im.complete && im.naturalWidth > 0)) continue;
+          if (!im._t0) { im._t0 = now; continue; }
+          if (now - im._t0 > IMG_TIMEOUT) swap(im);
+        }
+      }, 400);
+    })();
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>
